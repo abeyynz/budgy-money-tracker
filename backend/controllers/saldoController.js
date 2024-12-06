@@ -1,36 +1,38 @@
-const saldoModel = require('../models/saldo');
+const saldoModel = require('../models/saldoModel');
 
-exports.getSaldo = async (req, res) => {
-    const userId = req.userId;
-    try {
-        const saldo = await saldoModel.getSaldoByUserId(userId);
-        res.status(200).json({ saldo });
-    } catch (error) {
-        res.status(500).json({ message: 'Terjadi kesalahan saat mengambil saldo.', error: error.message});
+// Mendapatkan saldo terakhir pengguna
+const getSaldo = async (req, res) => {
+  const userId = req.user.id;  
+  try {
+    const saldo = await saldoModel.getSaldo(userId);
+    if (!saldo) {
+      return res.status(404).json({ success: false, message: 'Saldo tidak ditemukan.' });
     }
+    res.status(200).json({ success: true, data: saldo });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
-exports.updateSaldo = async (req, res) => {
-    const userId = req.userId;
-    const { saldo } = req.body;
+// Menambahkan saldo baru (hanya digunakan ketika transaksi pendapatan)
+const addSaldo = async (req, res) => {
+  const { nominal, tanggal } = req.body;
+  const userId = req.user.id;  
 
-    if (saldo === undefined || saldo < 0) {
-        return res.status(400).json ({ message: 'saldo tidak vaild. Pastikan saldo terisi dan tidak negatif.' });
-    }
+  // Validasi input
+  if (!nominal || !tanggal) {
+    return res.status(400).json({ success: false, message: 'Semua data harus diisi.' });
+  }
 
-    try {
-        if (saldo < 0) {
-            return res.status(400).json({ message: 'saldo harus diisi.' });
-        }
+  try {
+    const newSaldo = await saldoModel.addSaldo(nominal, userId, tanggal);
+    res.status(201).json({ success: true, data: newSaldo });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
-        const result = await saldoModel.updateSaldo(userId, saldo);
-
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: 'user tidak ditemukan atau saldo gagal diperbarui.'});
-        }
-        
-        res.status(200).json({ message: 'saldo berhasil diperbarui.'});
-    } catch (error) {
-        res.status(500).json({ message: 'Terjadi kesalahan saat memerbarui saldo.', error: error.message});
-    }    
+module.exports = {
+  getSaldo,
+  addSaldo,
 };

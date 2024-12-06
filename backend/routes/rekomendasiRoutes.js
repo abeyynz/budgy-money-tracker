@@ -1,8 +1,9 @@
 const express = require('express');
-const { getRekomendasi, addRekomendasi } = require('../controllers/rekomendasiController');
 const router = express.Router();
+const rekomendasiController = require('../controllers/rekomendasiController');
+const { verifyToken } = require('../middleware/authMiddleware');
 
-router.get('/:userId', getRekomendasi);
-router.get('/', addRekomendasi);
+// Mendapatkan rekomendasi terbaru untuk pengguna yang sedang login
+router.get('/latest', verifyToken, rekomendasiController.getLatestRekomendasi);
 
 module.exports = router;

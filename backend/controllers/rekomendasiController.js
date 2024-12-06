@@ -1,43 +1,31 @@
-const db = require('../models/db');
+const rekomendasiModel = require('../models/rekomendasiModel');
 
-const getRekomendasi = async (req, res) => {
-    const { userId } = req.params;
+// Mengambil rekomendasi terbaru untuk pengguna tertentu
+const getLatestRekomendasi = async (req, res) => {
+  console.log(req.user);
+  const userId = req.user.id;
+  try {
+    const latestRekomendasi = await rekomendasiModel.getLatestRekomendasiByUser(userId);
 
-    try {
-        const result = await db.query(
-            'SELECT * FROM rekomendasi WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
-            [userId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'Rekomendasi tidak ditemukan. '});
-        }
-        
-        res.status(200).json({ rekomendasi: result.rows[0] });
-    } catch (error) {
-        console.error('Error saat mengambil rekomendasi:', error.message);
-        res.status(500).json({ message: 'Terjadi kesalahan server.' });
+    if (!latestRekomendasi) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rekomendasi tidak ditemukan untuk pengguna ini.',
+      });
     }
+
+    res.status(200).json({
+      success: true,
+      data: latestRekomendasi,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };
 
-const addRekomendasi = async (req, res) => {
-    const { userId, nominal } = req.body;
-
-    if (!userId || !nominal) {
-        return res.status(400).json({ message: "Data tidak lengkap" });
-    }
-    
-    try {
-        await db.query(
-            'INSERT INTO rekomendasi (nominal, user_id) VALUES ($1, $2)',
-            [nominal, userId]
-        );
-
-        res.status(201).json({ message: "Rekomendasi berhasil ditambahkan" });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Terjadi kesalahan pada server" });
-    }
+module.exports = {
+  getLatestRekomendasi,
 };
-
-module.exports = { getRekomendasi, addRekomendasi };

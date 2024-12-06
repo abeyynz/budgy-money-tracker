@@ -1,45 +1,83 @@
-const db = require('../models/db');
+const pendapatanModel = require('../models/pendapatanModel');
 
-exports.addPendapatan = async (req, res) => {
-    const { userId, nominal, kategori_id, tanggal } = req.body;
-
-    try {
-        const query = 'INSERT INTO pendapatan (userId, nominal, kategori_id, tanggal) VALUES ($1, $2, $3, $4)';
-        await db.query(query, [userId, nominal, kategori_id, tanggal]);
-        res.status(201).json({ message: 'Pendapatan berhasil ditambahkan' });
-    } catch (error) {
-        res.status(500).json({ message: 'terjadi kesalahan pada server', error: error.message})
-    }
+// Mendapatkan daftar semua pendapatan
+const getPendapatan = async (req, res) => {
+  console.log(req.user);
+  const userId = req.user.id;  
+  try {
+    const pendapatan = await pendapatanModel.getAllPendapatan(userId);
+    res.status(200).json({ success: true, data: pendapatan });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
-exports.getPendapatan = async (req, res) => {
-    const { userId } = req.params;
+// Menambahkan pendapatan baru
+const addPendapatan = async (req, res) => {
+  const { nominal, kategoriId, tanggal } = req.body;
+  const userId = req.user.id;  
 
-    try {
-        const query =`
-            SELECT p.id, p.nominal, p.tanggal, k.nama AS kategori
-            FROM pendapatan p
-            JOIN kategori_pendapatan k ON p.kategori_id = k.id
-            WHERE p.user_id = $1
-        `;
-        const results = await db.query(query, [userId]);
-        res.status(200).json({ message: 'Daftar pendapatan berhasil diambil', data: result.rows });
-    } catch (error) {
-        res.status(500).json({ message: 'Terjadi kesalahan pada server', error: error.message});
-    }
+  // Validasi input
+  if (!nominal || !kategoriId || !tanggal) {
+    return res.status(400).json({ success: false, message: 'Semua data harus diisi.' });
+  }
+
+  try {
+    // Menambahkan pendapatan
+    const newPendapatan = await pendapatanModel.addPendapatan(nominal, kategoriId, userId, tanggal);
+
+    // Menambahkan nominal pendapatan ke saldo pengguna
+    const currentSaldo = await saldoModel.getSaldo(userId);
+    const newSaldo = currentSaldo ? currentSaldo.nominal + nominal : nominal;  
+
+    // Update saldo dengan nominal baru
+    await saldoModel.addSaldo(newSaldo, userId, tanggal); 
+
+    res.status(201).json({ success: true, data: newPendapatan });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
-exports.deletePendapatan = async (req, res) => {
-    const { id } = req.params;
+// Mengupdate pendapatan
+const updatePendapatan = async (req, res) => {
+  const { id } = req.params;
+  const { nominal, kategoriId, tanggal } = req.body;
 
-    try {
-        const query = 'DELETE FROM pendapatan WHERE id = $1';
-        const result = await db.query(query, [id]);
-        if (result.rowCount === 0) {
-            return res.status(404)({ message: 'Pendapatan tidak ditemukan' });
-        }
-        res.status(200).json({ message: 'Pendapatan berhasil dihapus' });
-    } catch (error) {
-        res.status(500).json({ message: 'Terjadi kesalahan pada server', error: error.message});
+  // Validasi input
+  if (!nominal || !kategoriId || !tanggal) {
+    return res.status(400).json({ success: false, message: 'Semua data harus diisi.' });
+  }
+
+  try {
+    const updatedPendapatan = await pendapatanModel.updatePendapatan(id, nominal, kategoriId, tanggal);
+    if (!updatedPendapatan) {
+      return res.status(404).json({ success: false, message: 'Pendapatan tidak ditemukan.' });
     }
+    res.status(200).json({ success: true, data: updatedPendapatan });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Menghapus pendapatan
+const deletePendapatan = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedPendapatan = await pendapatanModel.deletePendapatan(id);
+    if (!deletedPendapatan) {
+      return res.status(404).json({ success: false, message: 'Pendapatan tidak ditemukan.' });
+    }
+    res.status(200).json({ success: true, message: 'Pendapatan berhasil dihapus.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = {
+  getPendapatan,
+  addPendapatan,
+  updatePendapatan,
+  deletePendapatan,
 };

@@ -1,8 +1,11 @@
 const express = require('express');
-const { getSaldo, updateSaldo } = require('../controllers/saldoController');
+const saldoController = require('../controllers/saldoController');
+const { verifyToken } = require('../middleware/authMiddleware');  // Middleware autentikasi
+
 const router = express.Router();
 
-router.get('/', getSaldo);
-router.post('/', updateSaldo);
+router.get('/', verifyToken, saldoController.getSaldo);
+
+// router.post('/', verifyToken, saldoController.addSaldo);
 
 module.exports = router;

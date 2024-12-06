@@ -1,9 +1,12 @@
 const express = require('express');
-const { addPendapatan, getPendapatan, deletePendapatan } = require('../controllers/pendapatanController');
+const pendapatanController = require('../controllers/pendapatanController');
+const { verifyToken } = require('../middleware/authMiddleware'); // Middleware autentikasi
+
 const router = express.Router();
 
-router.post('/', addPendapatan);
-router.get('/:userId', getPendapatan);
-router.delete('/:id', deletePendapatan);
+router.get('/', verifyToken, pendapatanController.getPendapatan);
+router.post('/', verifyToken, pendapatanController.addPendapatan);
+router.put('/:id', verifyToken, pendapatanController.updatePendapatan);
+router.delete('/:id', verifyToken, pendapatanController.deletePendapatan);
 
 module.exports = router;

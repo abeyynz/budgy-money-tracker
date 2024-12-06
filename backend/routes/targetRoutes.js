@@ -1,8 +1,10 @@
 const express = require('express');
-const { getTarget, updateTarget } = require('../controllers/targetController');
 const router = express.Router();
+const targetController = require('../controllers/targetController');
+const { verifyToken } = require('../middleware/authMiddleware');
 
-router.get('/', getTarget);
-router.post('/', updateTarget);
+router.get('/', verifyToken, targetController.getTarget);
+
+router.put('/', verifyToken, targetController.updateTarget);
 
 module.exports = router;

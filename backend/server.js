@@ -1,47 +1,46 @@
 require('dotenv').config();
 const express = require('express');
-const authRoutes = require('./routes/authRoutes'); //login & register
-const saldoRoutes = require('./routes/saldoRoutes'); //saldo
-const targetRoutes = require('./routes/targetRoutes'); //Target
-const pendapatanRoutes = require('./routes/pendapatanRoutes'); //Pengeluaran
-const pengeluaranRoutes = require('./routes/pengeluaranRoutes'); //Pendapatan
-const kategoriRoutes = require('./routes/kategoriRoutes'); //kategori
-const rekomendasiRoutes = require('./routes/rekomendasiRoutes'); //Rekomendasi
-const homeRoutes = require('./routes/homeRoutes'); //dashboard(home)
+const authRoutes = require('./routes/authRoutes');
+const kategoriPendapatanRoutes = require('./routes/kategoriPendapatanRoutes');
+const kategoriPengeluaranRoutes = require('./routes/kategoriPengeluaranRoutes');
+const pendapatanRoutes = require('./routes/pendapatanRoutes');
+const pengeluaranRoutes = require('./routes/pengeluaranRoutes');
+const rekomendasiRoutes = require('./routes/rekomendasiRoutes');
+const targetRoutes = require('./routes/targetRoutes');
+const saldoRoutes = require('./routes/saldoRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
 
-const admin = require("firebase-admin");
-const serviceAccount = require("./firebase-config.json");
-
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-});
-
+// Middleware untuk parsing JSON
 app.use(express.json());
 
-app.use('/api/auth', authRoutes); //login & register
-app.use('/api/saldo', saldoRoutes); //saldo
-app.use('/api/target', targetRoutes); //saldo
-app.use('/api/pendapatan', pendapatanRoutes); //pendapatan
-app.use('/api/pengeluaran', pengeluaranRoutes); //pengeluaran
-app.use('/api', kategoriRoutes); //kategori
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
+// Definisi rute
+app.use('/api/auth', authRoutes); // login & register
+app.use('/api/kategori-pendapatan', kategoriPendapatanRoutes);
+app.use('/api/kategori-pengeluaran', kategoriPengeluaranRoutes);
+app.use('/api/pendapatan', pendapatanRoutes);
+app.use('/api/pengeluaran', pengeluaranRoutes);
 app.use('/api/rekomendasi', rekomendasiRoutes);
-app.use('/api/home', homeRoutes);
+app.use('/api/target', targetRoutes);
+app.use('/api/saldo', saldoRoutes);
 
-//middleware (route tidak ditemukan & menangani error)
-app.use((err, res, next) => {
-    res.status(404).json({ message: "Route not found" });
+// Middleware untuk route not found
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
 });
 
+// Middleware untuk internal server error
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: "Internal Server Error" });
+  console.error(err.stack);
+  res.status(500).json({ message: 'Internal Server Error' });
 });
 
-
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log(`Server berjalan di ${PORT}`);
+  console.log(`Server berjalan di ${PORT}`);
 });
-
