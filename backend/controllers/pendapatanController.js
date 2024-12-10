@@ -26,13 +26,6 @@ const addPendapatan = async (req, res) => {
     // Menambahkan pendapatan
     const newPendapatan = await pendapatanModel.addPendapatan(nominal, kategoriId, userId, tanggal);
 
-    // Menambahkan nominal pendapatan ke saldo pengguna
-    const currentSaldo = await saldoModel.getSaldo(userId);
-    const newSaldo = currentSaldo ? currentSaldo.nominal + nominal : nominal;  
-
-    // Update saldo dengan nominal baru
-    await saldoModel.addSaldo(newSaldo, userId, tanggal); 
-
     res.status(201).json({ success: true, data: newPendapatan });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

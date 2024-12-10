@@ -25,12 +25,12 @@ const addPengeluaran = async (req, res) => {
     // Menambahkan pengeluaran
     const newPengeluaran = await pengeluaranModel.addPengeluaran(nominal, kategoriId, userId, tanggal);
 
-    // Mengurangi nominal pengeluaran dari saldo pengguna
-    const currentSaldo = await saldoModel.getSaldo(userId);
-    const newSaldo = currentSaldo ? currentSaldo.nominal - nominal : 0;  
+    // // Mengurangi nominal pengeluaran dari saldo pengguna
+    // const currentSaldo = await saldoModel.getSaldo(userId);
+    // const newSaldo = currentSaldo ? currentSaldo.nominal - nominal : 0;  
 
-    // Update saldo dengan nominal baru
-    await saldoModel.addSaldo(newSaldo, userId, tanggal); 
+    // // Update saldo dengan nominal baru
+    // await saldoModel.addSaldo(newSaldo, userId, tanggal); 
 
     res.status(201).json({ success: true, data: newPengeluaran });
   } catch (error) {

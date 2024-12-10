@@ -15,24 +15,24 @@ const getSaldo = async (req, res) => {
 };
 
 // Menambahkan saldo baru (hanya digunakan ketika transaksi pendapatan)
-const addSaldo = async (req, res) => {
-  const { nominal, tanggal } = req.body;
-  const userId = req.user.id;  
+// const addSaldo = async (req, res) => {
+//   const { nominal, tanggal } = req.body;
+//   const userId = req.user.id;  
 
-  // Validasi input
-  if (!nominal || !tanggal) {
-    return res.status(400).json({ success: false, message: 'Semua data harus diisi.' });
-  }
+//   // Validasi input
+//   if (!nominal || !tanggal) {
+//     return res.status(400).json({ success: false, message: 'Semua data harus diisi.' });
+//   }
 
-  try {
-    const newSaldo = await saldoModel.addSaldo(nominal, userId, tanggal);
-    res.status(201).json({ success: true, data: newSaldo });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+//   try {
+//     const newSaldo = await saldoModel.addSaldo(nominal, userId, tanggal);
+//     res.status(201).json({ success: true, data: newSaldo });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
 
 module.exports = {
   getSaldo,
-  addSaldo,
+  // addSaldo,
 };

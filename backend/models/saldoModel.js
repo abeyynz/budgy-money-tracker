@@ -8,12 +8,40 @@ const getSaldo = async (userId) => {
 
 // Menambahkan saldo baru (hanya digunakan setelah pendapatan atau pengeluaran)
 const addSaldo = async (nominal, userId, tanggal) => {
-  const result = await pool.query(
-    'INSERT INTO saldo (nominal, user_id, tanggal) VALUES ($1, $2, $3) RETURNING *',
-    [nominal, userId, tanggal]
-  );
-  return result.rows[0];  // Mengembalikan saldo yang baru ditambahkan
+  const client = await pool.connect();
+  try {
+    // Mulai transaksi
+    await client.query('BEGIN');
+
+    // Dapatkan saldo terakhir
+    const lastSaldoResult = await client.query(
+      'SELECT nominal FROM saldo WHERE user_id = $1 ORDER BY tanggal DESC LIMIT 1',
+      [userId]
+    );
+    const lastSaldo = lastSaldoResult.rows[0]?.nominal || 0;
+
+    // Hitung saldo baru
+    const newSaldo = lastSaldo + nominal;
+
+    // Tambahkan saldo baru
+    const result = await client.query(
+      'INSERT INTO saldo (nominal, user_id, tanggal) VALUES ($1, $2, $3) RETURNING *',
+      [newSaldo, userId, tanggal]
+    );
+
+    // Commit transaksi
+    await client.query('COMMIT');
+
+    return result.rows[0]; // Mengembalikan saldo baru
+  } catch (error) {
+    // Rollback jika ada kesalahan
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
+
 
 module.exports = {
   getSaldo,

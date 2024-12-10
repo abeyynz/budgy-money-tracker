@@ -1,4 +1,5 @@
 const pool = require('../database/db');
+// const { addSaldo } = require('./saldoModel');
 
 // Mendapatkan semua pendapatan berdasarkan user
 const getAllPendapatan = async (userId) => {
@@ -11,12 +12,31 @@ const getAllPendapatan = async (userId) => {
 
 // Menambahkan pendapatan baru
 const addPendapatan = async (nominal, kategoriId, userId, tanggal) => {
-  const result = await pool.query(
-    'INSERT INTO pendapatan (nominal, kategori_id, user_id, tanggal) VALUES ($1, $2, $3, $4) RETURNING *',
-    [nominal, kategoriId, userId, tanggal]
-  );
-  return result.rows[0];
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Tambahkan pendapatan baru
+    const resultPendapatan = await client.query(
+      'INSERT INTO pendapatan (nominal, kategori_id, user_id, tanggal) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nominal, kategoriId, userId, tanggal]
+    );
+
+    // Perbarui saldo
+    // await addSaldo(nominal, userId, tanggal);
+
+    await client.query('COMMIT');
+
+    return resultPendapatan.rows[0];
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
+
+
 
 // Mengupdate pendapatan
 const updatePendapatan = async (id, nominal, kategoriId, tanggal) => {

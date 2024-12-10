@@ -25,10 +25,10 @@ const getTarget = async (req, res) => {
   }
 };
 
-// Mengupdate nilai target untuk pengguna tertentu
-const updateTarget = async (req, res) => {
+// Menambahkan target untuk pengguna tertentu
+const addTarget = async (req, res) => {
   const userId = req.user.id; 
-  const { nominal } = req.body;
+  const { nominal, tanggal } = req.body;
 
   if (!nominal || isNaN(nominal)) {
     return res.status(400).json({
@@ -38,7 +38,35 @@ const updateTarget = async (req, res) => {
   }
 
   try {
-    const updatedTarget = await targetModel.updateTargetByUser(userId, nominal);
+    const newTarget = await targetModel.addTarget(userId, nominal, tanggal);
+
+    res.status(201).json({
+      success: true,
+      message: 'Target berhasil ditambahkan.',
+      data: newTarget,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Mengupdate nilai target untuk pengguna tertentu
+const updateTarget = async (req, res) => {
+  const userId = req.user.id; 
+  const { nominal, tanggal } = req.body;
+
+  if (!nominal || isNaN(nominal)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Nominal harus berupa angka dan tidak boleh kosong.',
+    });
+  }
+
+  try {
+    const updatedTarget = await targetModel.updateTargetByUser(userId, nominal, tanggal);
 
     if (!updatedTarget) {
       return res.status(404).json({
@@ -62,5 +90,6 @@ const updateTarget = async (req, res) => {
 
 module.exports = {
   getTarget,
+  addTarget,
   updateTarget,
 };
