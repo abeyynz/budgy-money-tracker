@@ -1,0 +1,9 @@
+tensorflow==2.18.0
+gcsfs
+flask
+tensorflow
+numpy
+google-cloud-storage
+psycopg2-binary==2.9.5 
+pyjwt
+python-dotenv
