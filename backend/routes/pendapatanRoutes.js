@@ -60,6 +60,13 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: Data pendapatan berhasil ditambahkan
+ */
+
+router.get('/', verifyToken, pendapatanController.getPendapatan);
+router.post('/', verifyToken, pendapatanController.addPendapatan);
+/**
+ * @swagger
+ * /api/pendapatan/{id}:
  *   put:
  *     summary: Memperbarui data pendapatan berdasarkan ID
  *     tags: [Pendapatan]
@@ -108,8 +115,6 @@ const router = express.Router();
  *         description: Data pendapatan berhasil dihapus
  */
 
-router.get('/', verifyToken, pendapatanController.getPendapatan);
-router.post('/', verifyToken, pendapatanController.addPendapatan);
 router.put('/:id', verifyToken, pendapatanController.updatePendapatan);
 router.delete('/:id', verifyToken, pendapatanController.deletePendapatan);
 

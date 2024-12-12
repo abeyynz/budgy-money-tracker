@@ -6,7 +6,7 @@ const getTargetByUser = async (userId) => {
     'SELECT id, nominal, tanggal FROM target WHERE user_id = $1',
     [userId]
   );
-  return result.rows[0]; // Mengembalikan satu data target
+  return result.rows;
 };
 
 // Menambahkan target untuk pengguna tertentu

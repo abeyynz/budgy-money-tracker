@@ -60,6 +60,15 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: Data pengeluaran berhasil ditambahkan
+ *   
+ */
+
+router.get('/', verifyToken, pengeluaranController.getPengeluaran);
+router.post('/', verifyToken, pengeluaranController.addPengeluaran);
+
+/**
+ * @swagger
+ * /api/pengeluaran/{id}:
  *   put:
  *     summary: Memperbarui data pengeluaran berdasarkan ID
  *     tags: [Pengeluaran]
@@ -106,11 +115,9 @@ const router = express.Router();
  *     responses:
  *       200:
  *         description: Data pengeluaran berhasil dihapus
- */
+ */ 
 
-router.get('/', verifyToken, pengeluaranController.getPengeluaran);
-router.post('/', verifyToken, pengeluaranController.addPengeluaran);
-router.put('/pengeluaran/:id', verifyToken, pengeluaranController.updatePengeluaran);
-router.delete('/pengeluaran/:id', verifyToken, pengeluaranController.deletePengeluaran);
+router.put('/:id', verifyToken, pengeluaranController.updatePengeluaran);
+router.delete('/:id', verifyToken, pengeluaranController.deletePengeluaran);
 
 module.exports = router;
