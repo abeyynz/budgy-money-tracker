@@ -13,14 +13,36 @@ app = Flask(__name__)
 
 # Konfigurasi bucket dan path model di GCS
 BUCKET_NAME = 'budgy-storage'
-MODEL_PATH = 'models/my_model.keras'  # Lokasi model di dalam bucket GCS
+MODEL_PATH = 'models/my_model_saved.h5'  # Lokasi model di dalam bucket GCS
 
 # Fungsi untuk memuat model dari GCS
+# def load_model_from_gcs(bucket_name, model_path):
+#     """Memuat model langsung dari Google Cloud Storage."""
+#     model_uri = f'gs://{bucket_name}/{model_path}'
+#     model = tf.keras.models.load_model(model_uri)
+#     print(f"Model loaded from GCS: {model_uri}")
+#     return model
+
+@tf.keras.utils.register_keras_serializable()
+def mse(y_true, y_pred):
+    return tf.reduce_mean(tf.square(y_true - y_pred))
+
 def load_model_from_gcs(bucket_name, model_path):
-    """Memuat model langsung dari Google Cloud Storage."""
-    model_uri = f'gs://{bucket_name}/{model_path}'
-    model = tf.keras.models.load_model(model_uri)
-    print(f"Model loaded from GCS: {model_uri}")
+    """Mengunduh model dari GCS dan memuatnya ke TensorFlow."""
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(model_path)
+    
+    # Lokasi sementara di filesystem lokal
+    local_model_path = f'/tmp/{os.path.basename(model_path)}'
+    
+    # Unduh model dari GCS ke /tmp
+    blob.download_to_filename(local_model_path)
+    print(f"Model downloaded to {local_model_path}")
+    
+    # Muat model dengan fungsi kustom terdaftar
+    model = tf.keras.models.load_model(local_model_path, custom_objects={'mse': mse})
+    print(f"Model loaded: {local_model_path}")
     return model
 
 # Muat model langsung saat aplikasi dimulai
@@ -147,10 +169,17 @@ def generate_rekomendasi():
 @app.route('/rekomendasi', methods=['GET'])
 def get_rekomendasi():
     try:
-        # Ambil rekomendasi terbaru dari database
-        db_socket_dir = '/cloudsql'  # Lokasi default Cloud SQL socket
+        # Ambil token dari header Authorization
+        token = request.headers.get('Authorization').split(" ")[1]
+        
+        # Dapatkan user_id dari token
+        user_id = get_user_id_from_token(token)
+        
+        # Lokasi default Cloud SQL socket
+        db_socket_dir = '/cloudsql'
         instance_connection_name = 'budgy-money-tracker:asia-southeast2:money-tracker'
         
+        # Koneksi ke database
         conn = psycopg2.connect(
             user="postgres",
             password="123123",
@@ -159,25 +188,32 @@ def get_rekomendasi():
         )
 
         cursor = conn.cursor()
+        
+        # Query untuk mengambil semua data rekomendasi berdasarkan user_id tertentu
         cursor.execute("""
             SELECT nominal, tanggal
             FROM rekomendasi
-            ORDER BY tanggal DESC
-            LIMIT 1;
-        """)
+            WHERE user_id = %s
+            ORDER BY tanggal DESC;
+        """, (user_id,))
         
-        result = cursor.fetchone()
+        # Ambil semua hasil query
+        results = cursor.fetchall()
         cursor.close()
         conn.close()
 
-        if result:
-            nominal_rekomendasi, tanggal = result
-            return jsonify({
-                'nominal_rekomendasi': nominal_rekomendasi,
-                'tanggal': tanggal.isoformat()
-            })
+        if results:
+            # Formatkan hasil ke dalam list of dictionaries
+            rekomendasi_list = [
+                {
+                    'nominal_rekomendasi': nominal,
+                    'tanggal': tanggal.isoformat()
+                }
+                for nominal, tanggal in results
+            ]
+            return jsonify(rekomendasi_list), 200
 
-        return jsonify({'error': 'No recommendation found'}), 404
+        return jsonify({'error': 'No recommendations found for this user'}), 404
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
